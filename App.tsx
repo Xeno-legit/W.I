@@ -69,11 +69,11 @@ function App() {
               <Shield className="text-white w-5 h-5" />
             </div>
             <span className="font-bold text-lg tracking-tight text-white">
-              Tactical<span className="text-primary-400">Armory</span>
+              Weapon<span className="text-primary-400">Index</span>
             </span>
           </div>
           <div className="text-xs font-mono text-slate-500 hidden md:block">
-            V2.1 // VISUAL-LINKED
+            V2.3 // FUNCTION FINALIZING
           </div>
         </div>
       </header>

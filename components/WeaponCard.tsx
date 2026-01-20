@@ -100,22 +100,45 @@ export const WeaponCard: React.FC<WeaponCardProps> = ({ data, imageUrl }) => {
 
             {/* Sidebar / Context */}
             <div className="md:col-span-1">
-              <div className="bg-slate-950 p-5 rounded-xl border border-slate-800">
-                <h4 className="text-xs font-mono text-primary-400 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2">
-                  System Status
-                </h4>
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 animate-[fadeIn_0.5s_ease-out_forwards]">
+                <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
+                  <h4 className="text-[10px] font-mono text-primary-400 uppercase tracking-widest">
+                    System Status
+                  </h4>
+                  <div className="flex gap-1.5">
+                     <div className="w-1 h-1 bg-slate-700 rounded-full"></div>
+                     <div className="w-1 h-1 bg-slate-700 rounded-full"></div>
+                     <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+                  </div>
+                </div>
+                
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-500">Classification</span>
-                    <span className="text-sm font-medium text-white">{data.type}</span>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest shrink-0">Type</span>
+                    <div className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-right shadow-inner max-w-[70%]">
+                      <span className="text-sm font-bold text-slate-100 leading-snug block">
+                        {data.type}
+                      </span>
+                    </div>
                   </div>
-                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-500">Origin</span>
-                    <span className="text-sm font-medium text-white">{data.origin}</span>
+
+                   <div className="flex items-center justify-between gap-4">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest shrink-0">Origin</span>
+                    <div className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-right shadow-inner max-w-[70%]">
+                      <span className="text-sm font-bold text-slate-100 leading-snug block">
+                        {data.origin}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-500">Validation</span>
-                    <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">CONFIRMED</span>
+                  
+                  <div className="pt-3 border-t border-slate-800 flex justify-between items-center mt-2">
+                    <span className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Valid</span>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-emerald-500/20 blur-md rounded-lg animate-pulse"></div>
+                      <span className="relative text-[10px] font-black text-emerald-400 bg-emerald-950/40 px-3 py-1.5 rounded border border-emerald-500/30 tracking-widest uppercase shadow-[0_0_10px_-2px_rgba(16,185,129,0.3)]">
+                        CONFIRMED
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
