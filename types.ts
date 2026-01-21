@@ -12,6 +12,13 @@ export interface WeaponData {
   description: string;
   specs: WeaponSpec[];
   isValidWeapon: boolean;
+  suggestedName?: string; // For typo corrections
+}
+
+export interface SimilarWeapon {
+  name: string;
+  type: string;
+  origin: string;
 }
 
 export interface SearchResult {
