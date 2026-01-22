@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { Search, Shield, Loader2, AlertCircle, AlertTriangle, Clock, XCircle } from 'lucide-react';
-import { identifyWeapon, getSimilarWeapons } from './services/geminiService';
+import { Search, Shield, Loader2, AlertCircle, AlertTriangle, Clock, XCircle, History, Grid, Heart, Github, Linkedin, Mail } from 'lucide-react';
+import { identifyWeapon, getSimilarWeapons, getCurrentApiKey } from './services/geminiService';
 import { fetchWikipediaImage } from './services/wikipediaService';
 import { WeaponData, SimilarWeapon } from './types';
 import { WeaponCard } from './components/WeaponCard';
@@ -21,6 +21,7 @@ function App() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [similarWeapons, setSimilarWeapons] = useState<SimilarWeapon[]>([]);
+  const [apiKeyIndex, setApiKeyIndex] = useState<number>(0);
 
   const getErrorType = (errorMessage: string): ErrorType => {
     const msg = errorMessage.toLowerCase();
@@ -63,6 +64,7 @@ function App() {
       }
 
       setData(aiData);
+      setApiKeyIndex(getCurrentApiKey());
 
       // Step 2: Fetch main weapon image (after a small delay)
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -172,6 +174,10 @@ function App() {
     }
   };
 
+  const getApiKeyDisplay = () => {
+    return apiKeyIndex === 0 ? 'API Key 1' : 'API Key 2';
+  };
+
   const getErrorDescription = (type: ErrorType) => {
     switch (type) {
       case 'rate_limit':
@@ -188,7 +194,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-primary-500/30 selection:text-white pb-20">
+    <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-primary-500/30 selection:text-white flex flex-col">
       
       {/* Navbar / Header */}
       <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-xl sticky top-0 z-50">
@@ -198,16 +204,43 @@ function App() {
               <Shield className="text-white w-5 h-5" />
             </div>
             <span className="font-bold text-lg tracking-tight text-white">
-              Weapon<span className="text-primary-400">Index</span>
+              Sector<span className="text-primary-400">One</span>
             </span>
           </div>
-          <div className="text-xs font-mono text-slate-500 hidden md:block">
-            V2.4 // OPTIMIZED
+          
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => console.log('History clicked')}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-slate-600"
+              title="Search History"
+            >
+              <History className="w-4 h-4" />
+              <span className="hidden md:inline text-sm font-medium">History</span>
+            </button>
+            
+            <button
+              onClick={() => console.log('Categories clicked')}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-slate-600"
+              title="Browse Categories"
+            >
+              <Grid className="w-4 h-4" />
+              <span className="hidden md:inline text-sm font-medium">Categories</span>
+            </button>
+            
+            <button
+              onClick={() => console.log('Favorites clicked')}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-slate-600"
+              title="Favorites"
+            >
+              <Heart className="w-4 h-4" />
+              <span className="hidden md:inline text-sm font-medium">Favorites</span>
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-12 md:pt-20">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-12 md:pt-20 flex-1 w-full">
         
         {/* Search Section */}
         <div className={`transition-all duration-700 ease-in-out ${data ? 'translate-y-0' : 'translate-y-[15vh]'}`}>
@@ -340,7 +373,68 @@ function App() {
           </div>
         )}
 
+        {/* Spacer div for automatic spacing */}
+        <div className="h-24 md:h-32"></div>
+
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-800 bg-slate-900/50 backdrop-blur-xl mt-auto">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            
+            {/* Left: Version & API Info */}
+            <div className="flex flex-col items-center md:items-start gap-2">
+              <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+                <span>V2.4 // OPTIMIZED</span>
+                {data && (
+                  <>
+                    <span className="text-slate-700">•</span>
+                    <span>
+                      API: <span className="text-blue-400">{getApiKeyDisplay()}</span>
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Shield className="w-3 h-3 text-primary-500" />
+                <span>Sector<span className="text-primary-400">One</span></span>
+                <span className="text-slate-700">•</span>
+                <span>© 2026</span>
+              </div>
+            </div>
+
+            {/* Center: Social Links */}
+            <div className="flex items-center gap-4">
+              <a
+                href="https://github.com/Xeno-legit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800/50 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 transition-all hover:scale-110"
+                title="GitHub"
+              >
+                <Github className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+              </a>
+              
+              <a
+                href="https://www.linkedin.com/in/abdulhamid-ali-11ba22315/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800/50 hover:bg-blue-600 border border-slate-700 hover:border-blue-500 transition-all hover:scale-110"
+                title="LinkedIn"
+              >
+                <Linkedin className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+              </a>
+            </div>
+
+            {/* Right: Additional Info */}
+            <div className="flex flex-col items-center md:items-end gap-2 text-xs text-slate-500">
+              <span>Built with React & TypeScript</span>
+              <span className="text-slate-600">Powered by Wikipedia & Gemini API</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
