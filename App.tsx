@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Search, Shield, Loader2, AlertCircle, AlertTriangle, Clock, XCircle, History, Grid, Heart, Github, Linkedin, Mail } from 'lucide-react';
 import { identifyWeapon, getSimilarWeapons, getCurrentApiKey } from './services/geminiService';
 import { fetchWikipediaImage } from './services/wikipediaService';
+import { saveToHistory, saveToCache, getFromCache } from './utils/localStorage';
 import { WeaponData, SimilarWeapon } from './types';
 import { WeaponCard } from './components/WeaponCard';
 import { SimilarWeaponCard } from './components/SimilarWeaponCard';
@@ -22,6 +23,16 @@ function App() {
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [similarWeapons, setSimilarWeapons] = useState<SimilarWeapon[]>([]);
   const [apiKeyIndex, setApiKeyIndex] = useState<number>(0);
+
+  // Check for search query parameter on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const searchParam = params.get('search');
+    if (searchParam) {
+      setQuery(searchParam);
+      handleSearch(undefined, searchParam);
+    }
+  }, []);
 
   const getErrorType = (errorMessage: string): ErrorType => {
     const msg = errorMessage.toLowerCase();
@@ -53,6 +64,30 @@ function App() {
     setSimilarWeapons([]);
 
     try {
+      // Check cache first
+      const cached = getFromCache(searchTerm);
+      
+      if (cached) {
+        // Use cached data - instant load!
+        setData(cached.weapon);
+        setImageUrl(cached.imageUrl);
+        setSimilarWeapons(cached.similarWeapons || []); // Load cached similar weapons
+        setApiKeyIndex(getCurrentApiKey());
+        
+        // Still save to history to update timestamp
+        if (cached.weapon.isValidWeapon) {
+          saveToHistory(cached.weapon, searchTerm);
+        }
+        
+        // Check for suggestion
+        if (cached.weapon.suggestedName && cached.weapon.suggestedName !== searchTerm) {
+          setSuggestion(cached.weapon.suggestedName);
+        }
+        
+        setLoading(false);
+        return;
+      }
+
       // SEQUENTIAL LOADING to avoid rate limits
       
       // Step 1: Get weapon data from AI
@@ -65,6 +100,11 @@ function App() {
 
       setData(aiData);
       setApiKeyIndex(getCurrentApiKey());
+
+      // Save to history
+      if (aiData.isValidWeapon) {
+        saveToHistory(aiData, searchTerm);
+      }
 
       // Step 2: Fetch main weapon image (after a small delay)
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -88,11 +128,15 @@ function App() {
       setImageUrl(finalImage);
 
       // Step 4: Fetch similar weapons (with delay to avoid rate limit)
+      let similar: SimilarWeapon[] = [];
       if (aiData.isValidWeapon) {
         await new Promise(resolve => setTimeout(resolve, 800));
-        const similar = await getSimilarWeapons(aiData.name, aiData.type);
+        similar = await getSimilarWeapons(aiData.name, aiData.type);
         setSimilarWeapons(similar);
       }
+
+      // Save to cache for future instant loads (including similar weapons)
+      saveToCache(aiData, finalImage, similar, searchTerm);
 
     } catch (err: any) {
       const errorMessage = err.message || "Failed to retrieve weapon data.";
@@ -210,14 +254,14 @@ function App() {
           
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => console.log('History clicked')}
+            <a
+              href="/history"
               className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-slate-600"
               title="Search History"
             >
               <History className="w-4 h-4" />
               <span className="hidden md:inline text-sm font-medium">History</span>
-            </button>
+            </a>
             
             <button
               onClick={() => console.log('Categories clicked')}
@@ -373,8 +417,26 @@ function App() {
           </div>
         )}
 
-        {/* Spacer div for automatic spacing */}
-        <div className="h-24 md:h-32"></div>
+        {/* New Search Button */}
+        {data && !error && (
+          <div className="flex justify-center mt-8 mb-10">
+            <button
+              onClick={() => {
+                setQuery('');
+                setData(null);
+                setImageUrl(null);
+                setSimilarWeapons([]);
+                setSuggestion(null);
+                setError(null);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="group flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-primary-500 to-blue-600 hover:from-primary-600 hover:to-blue-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-primary-500/20 hover:shadow-xl hover:shadow-primary-500/30 hover:scale-105 active:scale-95"
+            >
+              <Search className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+              <span>Search Another Weapon</span>
+            </button>
+          </div>
+        )}
 
       </main>
 
