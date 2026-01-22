@@ -1,65 +1,200 @@
 import React, { useState, useCallback } from 'react';
-import { Search, Shield, Loader2, AlertCircle } from 'lucide-react';
-import { identifyWeapon } from './services/geminiService';
+import { Search, Shield, Loader2, AlertCircle, AlertTriangle, Clock, XCircle, History, Grid, Heart, Github, Linkedin, Mail } from 'lucide-react';
+import { identifyWeapon, getSimilarWeapons, getCurrentApiKey } from './services/geminiService';
 import { fetchWikipediaImage } from './services/wikipediaService';
-import { WeaponData } from './types';
+import { WeaponData, SimilarWeapon } from './types';
 import { WeaponCard } from './components/WeaponCard';
+import { SimilarWeaponCard } from './components/SimilarWeaponCard';
+
+type ErrorType = 'rate_limit' | 'api_error' | 'invalid_search' | 'network_error' | 'unknown';
+
+interface ErrorState {
+  message: string;
+  type: ErrorType;
+}
 
 function App() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorState | null>(null);
   const [data, setData] = useState<WeaponData | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [similarWeapons, setSimilarWeapons] = useState<SimilarWeapon[]>([]);
+  const [apiKeyIndex, setApiKeyIndex] = useState<number>(0);
 
-  const handleSearch = useCallback(async (e?: React.FormEvent) => {
+  const getErrorType = (errorMessage: string): ErrorType => {
+    const msg = errorMessage.toLowerCase();
+    if (msg.includes('429') || msg.includes('too many requests') || msg.includes('rate limit')) {
+      return 'rate_limit';
+    }
+    if (msg.includes('invalid') || msg.includes('not found') || msg.includes('not recognized')) {
+      return 'invalid_search';
+    }
+    if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection')) {
+      return 'network_error';
+    }
+    if (msg.includes('api') || msg.includes('service')) {
+      return 'api_error';
+    }
+    return 'unknown';
+  };
+
+  const handleSearch = useCallback(async (e?: React.FormEvent, searchQuery?: string) => {
     if (e) e.preventDefault();
-    if (!query.trim()) return;
+    const searchTerm = searchQuery || query;
+    if (!searchTerm.trim()) return;
 
     setLoading(true);
     setError(null);
     setData(null);
     setImageUrl(null);
+    setSuggestion(null);
+    setSimilarWeapons([]);
 
     try {
-      // 1. Start AI analysis
-      const aiPromise = identifyWeapon(query);
+      // SEQUENTIAL LOADING to avoid rate limits
       
-      // 2. Try fetching image with user query immediately (optimistic)
-      const wikiPromise = fetchWikipediaImage(query);
+      // Step 1: Get weapon data from AI
+      const aiData = await identifyWeapon(searchTerm);
+      
+      // Check if AI suggested a correction
+      if (aiData.suggestedName && aiData.suggestedName !== searchTerm) {
+        setSuggestion(aiData.suggestedName);
+      }
 
-      const [aiData, initialImage] = await Promise.all([aiPromise, wikiPromise]);
+      setData(aiData);
+      setApiKeyIndex(getCurrentApiKey());
 
-      let finalImage = initialImage;
+      // Step 2: Fetch main weapon image (after a small delay)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      let finalImage = await fetchWikipediaImage(searchTerm);
 
-      // 3. Smart Retry: If no image found, use the OFFICIAL name from AI to try again.
-      // This fixes cases where user types "deagle" but wiki needs "IMI Desert Eagle"
+      // Step 3: Smart Retry for image if needed
       if (!finalImage && aiData && aiData.isValidWeapon) {
-        // Only retry if the name is sufficiently different to warrant a new search
-        if (aiData.name.toLowerCase() !== query.trim().toLowerCase()) {
+        if (aiData.name.toLowerCase() !== searchTerm.trim().toLowerCase()) {
            console.log(`Retrying image search with official name: ${aiData.name}`);
+           await new Promise(resolve => setTimeout(resolve, 500));
            finalImage = await fetchWikipediaImage(aiData.name);
         }
         
-        // If STILL no image, try appending the type (e.g. "M1 Abrams Tank")
         if (!finalImage) {
            console.log(`Retrying image search with context: ${aiData.name} weapon`);
+           await new Promise(resolve => setTimeout(resolve, 500));
            finalImage = await fetchWikipediaImage(`${aiData.name} weapon`);
         }
       }
 
-      setData(aiData);
       setImageUrl(finalImage);
 
+      // Step 4: Fetch similar weapons (with delay to avoid rate limit)
+      if (aiData.isValidWeapon) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        const similar = await getSimilarWeapons(aiData.name, aiData.type);
+        setSimilarWeapons(similar);
+      }
+
     } catch (err: any) {
-      setError(err.message || "Failed to retrieve weapon data.");
+      const errorMessage = err.message || "Failed to retrieve weapon data.";
+      const errorType = getErrorType(errorMessage);
+      setError({ message: errorMessage, type: errorType });
+      
+      // Auto-dismiss error after 5 seconds
+      setTimeout(() => {
+        setError(null);
+      }, 5000);
     } finally {
       setLoading(false);
     }
   }, [query]);
 
+  const handleSuggestionClick = () => {
+    if (suggestion) {
+      setQuery(suggestion);
+      handleSearch(undefined, suggestion);
+    }
+  };
+
+  const handleSimilarWeaponClick = (weaponName: string) => {
+    setQuery(weaponName);
+    handleSearch(undefined, weaponName);
+  };
+
+  const getErrorIcon = (type: ErrorType) => {
+    switch (type) {
+      case 'rate_limit':
+        return <Clock className="text-amber-400 mt-0.5 shrink-0 w-6 h-6" />;
+      case 'invalid_search':
+        return <XCircle className="text-red-400 mt-0.5 shrink-0 w-6 h-6" />;
+      case 'network_error':
+        return <AlertCircle className="text-orange-400 mt-0.5 shrink-0 w-6 h-6" />;
+      default:
+        return <AlertCircle className="text-red-500 mt-0.5 shrink-0 w-6 h-6" />;
+    }
+  };
+
+  const getErrorTitle = (type: ErrorType) => {
+    switch (type) {
+      case 'rate_limit':
+        return 'Rate Limit Reached';
+      case 'invalid_search':
+        return 'Invalid Search';
+      case 'network_error':
+        return 'Network Error';
+      case 'api_error':
+        return 'API Error';
+      default:
+        return 'Analysis Failed';
+    }
+  };
+
+  const getErrorColor = (type: ErrorType) => {
+    switch (type) {
+      case 'rate_limit':
+        return 'bg-amber-950/30 border-amber-700/50';
+      case 'invalid_search':
+        return 'bg-red-950/30 border-red-900/50';
+      case 'network_error':
+        return 'bg-orange-950/30 border-orange-700/50';
+      default:
+        return 'bg-red-950/30 border-red-900/50';
+    }
+  };
+
+  const getErrorTextColor = (type: ErrorType) => {
+    switch (type) {
+      case 'rate_limit':
+        return 'text-amber-300';
+      case 'invalid_search':
+        return 'text-red-400';
+      case 'network_error':
+        return 'text-orange-300';
+      default:
+        return 'text-red-400';
+    }
+  };
+
+  const getApiKeyDisplay = () => {
+    return apiKeyIndex === 0 ? 'API Key 1' : 'API Key 2';
+  };
+
+  const getErrorDescription = (type: ErrorType) => {
+    switch (type) {
+      case 'rate_limit':
+        return 'Too many requests. Please wait a moment and try again.';
+      case 'invalid_search':
+        return 'The search query does not match any known weapon system.';
+      case 'network_error':
+        return 'Unable to connect to the service. Check your internet connection.';
+      case 'api_error':
+        return 'The API service is currently unavailable. Please try again later.';
+      default:
+        return 'An unexpected error occurred. Please try again.';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-primary-500/30 selection:text-white pb-20">
+    <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-primary-500/30 selection:text-white flex flex-col">
       
       {/* Navbar / Header */}
       <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-xl sticky top-0 z-50">
@@ -69,16 +204,43 @@ function App() {
               <Shield className="text-white w-5 h-5" />
             </div>
             <span className="font-bold text-lg tracking-tight text-white">
-              Weapon<span className="text-primary-400">Index</span>
+              Sector<span className="text-primary-400">One</span>
             </span>
           </div>
-          <div className="text-xs font-mono text-slate-500 hidden md:block">
-            V2.3 // FUNCTION FINALIZING
+          
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => console.log('History clicked')}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-slate-600"
+              title="Search History"
+            >
+              <History className="w-4 h-4" />
+              <span className="hidden md:inline text-sm font-medium">History</span>
+            </button>
+            
+            <button
+              onClick={() => console.log('Categories clicked')}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-slate-600"
+              title="Browse Categories"
+            >
+              <Grid className="w-4 h-4" />
+              <span className="hidden md:inline text-sm font-medium">Categories</span>
+            </button>
+            
+            <button
+              onClick={() => console.log('Favorites clicked')}
+              className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-slate-600"
+              title="Favorites"
+            >
+              <Heart className="w-4 h-4" />
+              <span className="hidden md:inline text-sm font-medium">Favorites</span>
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-12 md:pt-20">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 pt-12 md:pt-20 flex-1 w-full">
         
         {/* Search Section */}
         <div className={`transition-all duration-700 ease-in-out ${data ? 'translate-y-0' : 'translate-y-[15vh]'}`}>
@@ -121,19 +283,45 @@ function App() {
                 </button>
               </div>
             </form>
+
+            {/* Error Section - DIRECTLY BELOW SEARCH BAR */}
+            {error && (
+              <div className={`mt-4 p-5 ${getErrorColor(error.type)} border rounded-xl flex items-start gap-4 animate-fade-in backdrop-blur-sm shadow-lg`}>
+                {getErrorIcon(error.type)}
+                <div className="flex-1 text-left">
+                  <h3 className={`${getErrorTextColor(error.type)} font-bold text-lg mb-1`}>
+                    {getErrorTitle(error.type)}
+                  </h3>
+                  <p className="text-slate-300 text-sm mb-2">
+                    {getErrorDescription(error.type)}
+                  </p>
+                  <p className="text-slate-400 text-xs font-mono bg-slate-900/50 px-3 py-2 rounded border border-slate-800 mt-2">
+                    {error.message}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Suggestion Section - BELOW ERROR */}
+            {suggestion && !error && (
+              <div className="mt-4 p-5 bg-amber-950/30 border border-amber-700/50 rounded-xl flex items-start gap-4 animate-fade-in backdrop-blur-sm shadow-lg">
+                <AlertTriangle className="text-amber-400 mt-0.5 shrink-0 w-6 h-6" />
+                <div className="flex-1 text-left">
+                  <h3 className="text-amber-300 font-bold text-lg mb-1">Did you mean?</h3>
+                  <p className="text-amber-100/80 text-sm mb-3">
+                    We found a close match to your search query.
+                  </p>
+                  <button
+                    onClick={handleSuggestionClick}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+                  >
+                    Search for "{suggestion}"
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Content Section */}
-        {error && (
-          <div className="max-w-2xl mx-auto mt-8 p-4 bg-red-950/30 border border-red-900/50 rounded-lg flex items-start gap-3 animate-fade-in">
-             <AlertCircle className="text-red-500 mt-1 shrink-0" />
-             <div>
-               <h3 className="text-red-400 font-bold">Analysis Failed</h3>
-               <p className="text-red-200/60 text-sm">{error}</p>
-             </div>
-          </div>
-        )}
 
         {loading && !data && (
            <div className="max-w-4xl mx-auto mt-12 space-y-8 animate-pulse">
@@ -146,9 +334,107 @@ function App() {
            </div>
         )}
 
-        {data && <WeaponCard data={data} imageUrl={imageUrl} />}
+        {/* Main Content with Similar Weapons */}
+        {data && !error && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+            {/* Main Weapon Card - Takes 2 columns */}
+            <div className="lg:col-span-2">
+              <WeaponCard data={data} imageUrl={imageUrl} />
+            </div>
+
+            {/* Similar Weapons Section - Takes 1 column */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-20">
+                <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-blue-600">
+                    Similar Weapons
+                  </span>
+                </h2>
+                
+                {similarWeapons.length > 0 ? (
+                  <div className="space-y-4">
+                    {similarWeapons.map((weapon, index) => (
+                      <SimilarWeaponCard 
+                        key={index} 
+                        weapon={weapon}
+                        onClick={handleSimilarWeaponClick}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-64 bg-slate-900 rounded-2xl border border-slate-800 animate-pulse" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Spacer div for automatic spacing */}
+        <div className="h-24 md:h-32"></div>
 
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-800 bg-slate-900/50 backdrop-blur-xl mt-auto">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            
+            {/* Left: Version & API Info */}
+            <div className="flex flex-col items-center md:items-start gap-2">
+              <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+                <span>V2.4 // OPTIMIZED</span>
+                {data && (
+                  <>
+                    <span className="text-slate-700">•</span>
+                    <span>
+                      API: <span className="text-blue-400">{getApiKeyDisplay()}</span>
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Shield className="w-3 h-3 text-primary-500" />
+                <span>Sector<span className="text-primary-400">One</span></span>
+                <span className="text-slate-700">•</span>
+                <span>© 2026</span>
+              </div>
+            </div>
+
+            {/* Center: Social Links */}
+            <div className="flex items-center gap-4">
+              <a
+                href="https://github.com/Xeno-legit"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800/50 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 transition-all hover:scale-110"
+                title="GitHub"
+              >
+                <Github className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+              </a>
+              
+              <a
+                href="https://www.linkedin.com/in/abdulhamid-ali-11ba22315/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800/50 hover:bg-blue-600 border border-slate-700 hover:border-blue-500 transition-all hover:scale-110"
+                title="LinkedIn"
+              >
+                <Linkedin className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+              </a>
+            </div>
+
+            {/* Right: Additional Info */}
+            <div className="flex flex-col items-center md:items-end gap-2 text-xs text-slate-500">
+              <span>Built with React & TypeScript</span>
+              <span className="text-slate-600">Powered by Wikipedia & Gemini API</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
