@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { WeaponData } from '../types';
 import { SpecsGrid } from './SpecsGrid';
 import { 
   Crosshair, 
   Globe, 
   Calendar, 
-  Factory 
+  Factory,
+  Heart
 } from 'lucide-react';
+import { saveToFavorites, removeFromFavorites, isFavorite } from '../utils/localStorage';
 
 interface WeaponCardProps {
   data: WeaponData;
@@ -14,6 +16,21 @@ interface WeaponCardProps {
 }
 
 export const WeaponCard: React.FC<WeaponCardProps> = ({ data, imageUrl }) => {
+  const [favorite, setFavorite] = useState(false);
+
+  useEffect(() => {
+    setFavorite(isFavorite(data.name));
+  }, [data.name]);
+
+  const handleFavoriteToggle = () => {
+    if (favorite) {
+      removeFromFavorites(data.name);
+      setFavorite(false);
+    } else {
+      saveToFavorites(data, imageUrl);
+      setFavorite(true);
+    }
+  };
   if (!data.isValidWeapon) {
     return (
       <div className="w-full max-w-4xl mx-auto mt-10 p-8 bg-red-900/10 border border-red-900/30 rounded-2xl text-center">
@@ -42,6 +59,19 @@ export const WeaponCard: React.FC<WeaponCardProps> = ({ data, imageUrl }) => {
           )}
           
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent pointer-events-none" />
+          
+          {/* Favorite Button */}
+          <button
+            onClick={handleFavoriteToggle}
+            className={`absolute top-4 left-4 p-3 rounded-lg backdrop-blur-md transition-all z-10 ${
+              favorite 
+                ? 'bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30' 
+                : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-700/50 hover:text-red-400'
+            } border shadow-lg hover:scale-110 active:scale-95`}
+            title={favorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Heart className={`w-5 h-5 ${favorite ? 'fill-current' : ''}`} />
+          </button>
           
           <div className="absolute bottom-0 left-0 w-full p-6 md:p-8">
              <div className="flex items-center space-x-3 mb-3">
