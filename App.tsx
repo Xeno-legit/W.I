@@ -76,7 +76,7 @@ function App() {
         
         // Still save to history to update timestamp
         if (cached.weapon.isValidWeapon) {
-          saveToHistory(cached.weapon, searchTerm);
+          saveToHistory(cached.weapon, cached.imageUrl, searchTerm);
         }
         
         // Check for suggestion
@@ -100,11 +100,6 @@ function App() {
 
       setData(aiData);
       setApiKeyIndex(getCurrentApiKey());
-
-      // Save to history
-      if (aiData.isValidWeapon) {
-        saveToHistory(aiData, searchTerm);
-      }
 
       // Step 2: Fetch main weapon image (after a small delay)
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -137,6 +132,11 @@ function App() {
 
       // Save to cache for future instant loads (including similar weapons)
       saveToCache(aiData, finalImage, similar, searchTerm);
+
+      // Save to history with image (after we have all data)
+      if (aiData.isValidWeapon) {
+        saveToHistory(aiData, finalImage, searchTerm);
+      }
 
     } catch (err: any) {
       const errorMessage = err.message || "Failed to retrieve weapon data.";
