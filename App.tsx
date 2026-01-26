@@ -272,14 +272,14 @@ function App() {
               <span className="hidden md:inline text-sm font-medium">Categories</span>
             </button>
             
-            <button
-              onClick={() => console.log('Favorites clicked')}
+            <a
+              href="/favorites"
               className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-slate-600"
               title="Favorites"
             >
               <Heart className="w-4 h-4" />
               <span className="hidden md:inline text-sm font-medium">Favorites</span>
-            </button>
+            </a>
           </div>
         </div>
       </header>

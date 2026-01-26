@@ -2,8 +2,10 @@ import { WeaponData } from '../types';
 
 const HISTORY_KEY = 'weaponSearchHistory';
 const CACHE_KEY = 'weaponCache';
+const FAVORITES_KEY = 'weaponFavorites';
 const MAX_HISTORY_ITEMS = 50;
 const MAX_CACHE_ITEMS = 100;
+const MAX_FAVORITES_ITEMS = 100;
 const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export interface HistoryItem {
@@ -18,6 +20,12 @@ export interface CachedWeapon {
   similarWeapons: any[]; // Store similar weapons too
   cachedAt: string;
   query: string;
+}
+
+export interface FavoriteItem {
+  weapon: WeaponData;
+  imageUrl: string | null;
+  addedAt: string;
 }
 
 // ============ HISTORY FUNCTIONS ============
@@ -180,6 +188,88 @@ const removeFromCache = (query: string): void => {
     localStorage.setItem(CACHE_KEY, JSON.stringify(filtered));
   } catch (error) {
     console.error('Failed to remove from cache:', error);
+  }
+};
+
+// ============ FAVORITES FUNCTIONS ============
+
+export const saveToFavorites = (weapon: WeaponData, imageUrl: string | null): void => {
+  try {
+    const favorites = getFavorites();
+    
+    // Check if weapon already exists in favorites
+    const existingIndex = favorites.findIndex(item => 
+      item.weapon.name.toLowerCase() === weapon.name.toLowerCase()
+    );
+    
+    // Don't add if already exists
+    if (existingIndex !== -1) {
+      console.log('Already in favorites:', weapon.name);
+      return;
+    }
+    
+    // Add new entry at the beginning
+    const newItem: FavoriteItem = {
+      weapon,
+      imageUrl,
+      addedAt: new Date().toISOString()
+    };
+    
+    favorites.unshift(newItem);
+    
+    // Keep only the last MAX_FAVORITES_ITEMS
+    if (favorites.length > MAX_FAVORITES_ITEMS) {
+      favorites.splice(MAX_FAVORITES_ITEMS);
+    }
+    
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    console.log('✅ Added to favorites:', weapon.name);
+  } catch (error) {
+    console.error('Failed to save to favorites:', error);
+  }
+};
+
+export const getFavorites = (): FavoriteItem[] => {
+  try {
+    const stored = localStorage.getItem(FAVORITES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Failed to load favorites:', error);
+    return [];
+  }
+};
+
+export const removeFromFavorites = (weaponName: string): void => {
+  try {
+    const favorites = getFavorites();
+    const filtered = favorites.filter(item => 
+      item.weapon.name.toLowerCase() !== weaponName.toLowerCase()
+    );
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(filtered));
+    console.log('🗑️ Removed from favorites:', weaponName);
+  } catch (error) {
+    console.error('Failed to remove from favorites:', error);
+  }
+};
+
+export const isFavorite = (weaponName: string): boolean => {
+  try {
+    const favorites = getFavorites();
+    return favorites.some(item => 
+      item.weapon.name.toLowerCase() === weaponName.toLowerCase()
+    );
+  } catch (error) {
+    console.error('Failed to check favorite status:', error);
+    return false;
+  }
+};
+
+export const clearFavorites = (): void => {
+  try {
+    localStorage.removeItem(FAVORITES_KEY);
+    console.log('🗑️ Favorites cleared');
+  } catch (error) {
+    console.error('Failed to clear favorites:', error);
   }
 };
 
