@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { History } from './pages/History';
 import { Favorites } from './pages/Favorites';
+import { Categories } from './pages/Categories';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -23,6 +24,12 @@ if (pathname === '/history') {
   root.render(
     <React.StrictMode>
       <Favorites />
+    </React.StrictMode>
+  );
+} else if (pathname === '/categories') {
+  root.render(
+    <React.StrictMode>
+      <Categories />
     </React.StrictMode>
   );
 } else {

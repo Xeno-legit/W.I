@@ -244,9 +244,11 @@ function App() {
       <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-primary-500/20">
-              <Shield className="text-white w-5 h-5" />
-            </div>
+            <img 
+              src="/SectorOnelogo.png" 
+              alt="SectorOne Logo" 
+              className="w-8 h-8 object-contain"
+            />
             <span className="font-bold text-lg tracking-tight text-white">
               Sector<span className="text-primary-400">One</span>
             </span>
@@ -263,14 +265,14 @@ function App() {
               <span className="hidden md:inline text-sm font-medium">History</span>
             </a>
             
-            <button
-              onClick={() => console.log('Categories clicked')}
+            <a
+              href="/categories"
               className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-slate-600"
               title="Browse Categories"
             >
               <Grid className="w-4 h-4" />
               <span className="hidden md:inline text-sm font-medium">Categories</span>
-            </button>
+            </a>
             
             <a
               href="/favorites"
@@ -459,7 +461,11 @@ function App() {
                 )}
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500">
-                <Shield className="w-3 h-3 text-primary-500" />
+                <img 
+                  src="/SectorOnelogo.png" 
+                  alt="SectorOne" 
+                  className="w-3 h-3 object-contain opacity-70"
+                />
                 <span>Sector<span className="text-primary-400">One</span></span>
                 <span className="text-slate-700">•</span>
                 <span>© 2026</span>
