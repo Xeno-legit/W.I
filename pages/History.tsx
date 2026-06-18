@@ -127,43 +127,57 @@ export const History: React.FC = () => {
             {filteredHistory.map((item, index) => (
               <div
                 key={index}
-                className="group bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-primary-500/50 transition-all hover:shadow-lg hover:shadow-primary-500/10 cursor-pointer relative"
+                className="group bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-primary-500/50 transition-all hover:shadow-lg hover:shadow-primary-500/10 cursor-pointer relative"
                 onClick={() => handleWeaponClick(item.weapon.name)}
               >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveItem(item.weapon.name);
-                  }}
-                  className="absolute top-3 right-3 p-2 bg-slate-800/50 hover:bg-red-900/40 text-slate-400 hover:text-red-400 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                  title="Remove from history"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-
-                <div className="mb-3">
-                  <h3 className="text-lg font-bold text-white mb-1 pr-8 line-clamp-1">
-                    {item.weapon.name}
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="px-2 py-0.5 bg-primary-500/20 text-primary-400 border border-primary-500/30 text-xs font-semibold rounded">
-                      {item.weapon.type}
-                    </span>
-                    <span className="text-slate-500">•</span>
-                    <span className="text-slate-400">{item.weapon.origin}</span>
+                {/* Image Section */}
+                {item.imageUrl && (
+                  <div className="relative h-40 w-full bg-slate-950">
+                    <img 
+                      src={item.imageUrl} 
+                      alt={item.weapon.name}
+                      className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
                   </div>
-                </div>
+                )}
 
-                <p className="text-slate-400 text-sm line-clamp-2 mb-3">
-                  {item.weapon.description}
-                </p>
+                <div className="p-5">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveItem(item.weapon.name);
+                    }}
+                    className="absolute top-3 right-3 p-2 bg-slate-800/50 hover:bg-red-900/40 text-slate-400 hover:text-red-400 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                    title="Remove from history"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
 
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{formatDate(item.searchedAt)}</span>
+                  <div className="mb-3">
+                    <h3 className="text-lg font-bold text-white mb-1 pr-8 line-clamp-1">
+                      {item.weapon.name}
+                    </h3>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="px-2 py-0.5 bg-primary-500/20 text-primary-400 border border-primary-500/30 text-xs font-semibold rounded">
+                        {item.weapon.type}
+                      </span>
+                      <span className="text-slate-500">•</span>
+                      <span className="text-slate-400">{item.weapon.origin}</span>
+                    </div>
                   </div>
-                  <span className="text-slate-600">Searched: "{item.query}"</span>
+
+                  <p className="text-slate-400 text-sm line-clamp-2 mb-3">
+                    {item.weapon.description}
+                  </p>
+
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>{formatDate(item.searchedAt)}</span>
+                    </div>
+                    <span className="text-slate-600">Searched: "{item.query}"</span>
+                  </div>
                 </div>
               </div>
             ))}

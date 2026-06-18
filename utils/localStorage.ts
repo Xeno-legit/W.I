@@ -10,6 +10,7 @@ const CACHE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export interface HistoryItem {
   weapon: WeaponData;
+  imageUrl: string | null;
   searchedAt: string;
   query: string;
 }
@@ -30,7 +31,7 @@ export interface FavoriteItem {
 
 // ============ HISTORY FUNCTIONS ============
 
-export const saveToHistory = (weapon: WeaponData, query: string): void => {
+export const saveToHistory = (weapon: WeaponData, imageUrl: string | null, query: string): void => {
   try {
     const history = getHistory();
     
@@ -47,6 +48,7 @@ export const saveToHistory = (weapon: WeaponData, query: string): void => {
     // Add new entry at the beginning
     const newItem: HistoryItem = {
       weapon,
+      imageUrl,
       searchedAt: new Date().toISOString(),
       query
     };

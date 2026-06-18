@@ -76,7 +76,7 @@ function App() {
         
         // Still save to history to update timestamp
         if (cached.weapon.isValidWeapon) {
-          saveToHistory(cached.weapon, searchTerm);
+          saveToHistory(cached.weapon, cached.imageUrl, searchTerm);
         }
         
         // Check for suggestion
@@ -100,11 +100,6 @@ function App() {
 
       setData(aiData);
       setApiKeyIndex(getCurrentApiKey());
-
-      // Save to history
-      if (aiData.isValidWeapon) {
-        saveToHistory(aiData, searchTerm);
-      }
 
       // Step 2: Fetch main weapon image (after a small delay)
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -137,6 +132,11 @@ function App() {
 
       // Save to cache for future instant loads (including similar weapons)
       saveToCache(aiData, finalImage, similar, searchTerm);
+
+      // Save to history with image (after we have all data)
+      if (aiData.isValidWeapon) {
+        saveToHistory(aiData, finalImage, searchTerm);
+      }
 
     } catch (err: any) {
       const errorMessage = err.message || "Failed to retrieve weapon data.";
@@ -308,7 +308,12 @@ function App() {
             <form onSubmit={handleSearch} className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 via-blue-600 to-primary-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
               <div className="relative flex items-center bg-slate-900 rounded-xl overflow-hidden shadow-2xl border border-slate-700 group-hover:border-slate-600 transition-colors">
-                <Search className="ml-6 text-slate-400 w-6 h-6" />
+                <img 
+                  src="/SectorOnelogo.png" 
+                  alt="SectorOne" 
+                  className="ml-4 w-5 h-5 object-contain opacity-60"
+                />
+                <Search className="ml-3 text-slate-400 w-6 h-6" />
                 <input
                   type="text"
                   value={query}

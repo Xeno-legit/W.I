@@ -84,13 +84,6 @@ The app includes smart rate limiting with:
 - 7-day caching to minimize API calls
 - Automatic retry with delays
 
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
-
-## License
-
-This project is open source and available under the MIT License.
 
 ## Author
 
@@ -101,3 +94,5 @@ This project is open source and available under the MIT License.
 ---
 
 Built with React & TypeScript | Powered by Wikipedia & Gemini API
+
+this was written by ai lol
