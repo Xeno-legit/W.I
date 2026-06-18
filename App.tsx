@@ -265,14 +265,14 @@ function App() {
               <span className="hidden md:inline text-sm font-medium">History</span>
             </a>
             
-            <button
-              onClick={() => console.log('Categories clicked')}
+            <a
+              href="/categories"
               className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-slate-600"
               title="Browse Categories"
             >
               <Grid className="w-4 h-4" />
               <span className="hidden md:inline text-sm font-medium">Categories</span>
-            </button>
+            </a>
             
             <a
               href="/favorites"
@@ -469,7 +469,7 @@ function App() {
                 <img 
                   src="/SectorOnelogo.png" 
                   alt="SectorOne" 
-                  className="w-4 h-4 object-contain opacity-70"
+                  className="w-3 h-3 object-contain opacity-70"
                 />
                 <span>Sector<span className="text-primary-400">One</span></span>
                 <span className="text-slate-700">•</span>

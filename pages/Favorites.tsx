@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Heart, Trash2, Search, ArrowLeft, Clock } from 'lucide-react';
+import { Heart, Trash2, Search, ArrowLeft, Clock } from 'lucide-react';
 import { getFavorites, clearFavorites, removeFromFavorites, FavoriteItem } from '../utils/localStorage';
 
 export const Favorites: React.FC = () => {

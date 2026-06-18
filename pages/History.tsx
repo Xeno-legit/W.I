@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, History as HistoryIcon, Trash2, Search, ArrowLeft, Clock } from 'lucide-react';
+import { History as HistoryIcon, Trash2, Search, ArrowLeft, Clock } from 'lucide-react';
 import { getHistory, clearHistory, removeFromHistory, HistoryItem } from '../utils/localStorage';
 
 export const History: React.FC = () => {
